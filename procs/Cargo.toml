@@ -1,0 +1,13 @@
+[package]
+name = "procs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+syn = { version = "1.0" }
+quote = "1.0"
+
+[lib]
+path = "main.rs"
+proc-macro = true
+crate-type = ["proc-macro"]
