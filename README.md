@@ -1,5 +1,8 @@
 # Flager: Lightweight command Line Argument Parser
 
+#### Crates.io: <https://crates.io/crates/flager>
+#### Docs.rs: <https://docs.rs/flager/0.0.2/flager/>
+
 #### This is a Rust library that helps you parse command-line arguments in your application. It provides a simple and flexible way to define flags, parse their values, and handle different types of arguments.
 ## Features:
 - Flags: You can define flags with short and long names, and specify whether they are mandatory or have a default value.
