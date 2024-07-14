@@ -4,8 +4,3 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-procs = { path="procs" }
-
-[[bin]]
-name = "flag"
-path = "main.rs"

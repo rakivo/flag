@@ -2,3 +2,8 @@ Cargo.lock
 bin
 target
 *.flag
+
+
+# Added by cargo
+
+/target
