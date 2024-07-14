@@ -9,7 +9,3 @@ keywords = ["flags", "flag", "lightweight", "library"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rakivo/flag"
 rust-version = "1.56.0"
-
-[lib]
-path = "src/lib.rs"
-crate-type = ["rlib"]
