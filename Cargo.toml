@@ -1,5 +1,5 @@
 [package]
-name = "flag"
+name = "flager"
 version = "0.0.1"
 edition = "2021"
 authors = ["Mark Tyrkba <marktyrkba456@gmail.com>"]
