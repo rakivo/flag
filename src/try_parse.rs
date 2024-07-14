@@ -34,6 +34,7 @@ impl TryParse for bool {
     }
 }
 
+// General implementation for integer types.
 impl TryParse for isize {
     #[inline]
     fn parse(_: &mut Parser, flag: &Flag::<isize>) -> Self::Ret {
@@ -55,7 +56,7 @@ macro_rules! impl_try_parse {
                         long: flag.long,
                         help: flag.help,
                         mandatory: flag.mandatory,
-                        value: None::<isize>,
+                        default: flag.default.map(|x| x as _),
                         nargs: flag.nargs.to_owned()
                     }).map(|x| x as _)
                 }

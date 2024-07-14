@@ -16,7 +16,7 @@ pub struct Flag<T = ()> {
     long: &'static str,
     help: Option::<&'static str>,
     mandatory: bool,
-    value: Option::<T>,
+    default: Option::<T>,
     nargs: NArgs
 }
 
@@ -35,9 +35,14 @@ where
             long,
             help: None,
             mandatory: false,
-            value: None::<T>,
+            default: None::<T>,
             nargs: NArgs::Count(1)
         }
+    }
+
+    #[inline(always)]
+    pub fn parse(&mut self) -> Option::<T> {
+        T::parse(&mut Parser::new(), self)
     }
 
     #[inline(always)]
@@ -58,6 +63,16 @@ where
     #[inline(always)]
     pub fn mandatory_borrow(&mut self) -> &mut Self {
         self.mandatory = true; self
+    }
+
+    #[inline(always)]
+    pub fn default_borrow(&mut self, v: T) -> &mut Self {
+        self.default = Some(v); self
+    }
+
+    #[inline(always)]
+    pub fn default(mut self, v: T) -> Self {
+        self.default = Some(v); self
     }
 }
 
@@ -86,17 +101,27 @@ impl Parser {
     }
 
     #[inline]
+    pub fn parse_or_default<T>(&mut self, f: &Flag::<T>) -> T
+    where
+        T: TryParse + Default + Clone
+    {
+        T::parse(self, f).unwrap_or(f.default.to_owned().unwrap_or_default())
+    }
+
+    #[inline]
     pub fn passed(&mut self, f: &Flag::<bool>) -> bool {
         bool::parse(self, f).unwrap()
     }
 }
 
 fn main() {
-    let flag1 = Flag::<i32>::new("-f", "--flag").mandatory().help("test");
+    let flag1 = Flag::<i32>::new("-f", "--flag").mandatory().help("test").default(34);
     let flag2 = Flag::<String>::new("-r", "--range");
+    let flag3 = Flag::<u64>::new("-m", "--mom").mandatory();
 
     let mut parser = Parser::new();
 
     println!("{:?}", parser.parse(&flag1));
     println!("{:?}", parser.parse(&flag2));
+    println!("{:?}", parser.parse_or_default(&flag3));
 }
