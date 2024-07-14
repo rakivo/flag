@@ -19,12 +19,24 @@ use proc_macro::{
     Punct,
     Spacing,
     Literal,
-    TokenTree,
-    TokenStream
+    TokenTree as Tt,
+    TokenStream as Ts
 };
-use syn::{parse_macro_input, AttributeArgs, Meta, NestedMeta as NM, Lit};
+use syn::{
+    Lit,
+    Meta,
+    AttributeArgs,
+    NestedMeta as NM,
+    parse_macro_input,
+};
+use std::{
+    path::PathBuf,
+    fs::read_to_string,
+};
 
-static FLAGS: LazyLock::<String> = LazyLock::new(|| std::fs::read_to_string("tmp.flag").expect("You forgot to call init()"));
+const TMP_FLAG_FILE: &str = "tmp.flag";
+
+static FLAGS: LazyLock::<String> = LazyLock::new(|| read_to_string("tmp.flag").expect("You forgot to call init()"));
 static mut PARSER: Parser = Parser::new();
 
 macro_rules! construct_flag {
@@ -38,7 +50,7 @@ macro_rules! construct_flag {
 }
 
 #[proc_macro_attribute]
-pub fn flag(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn flag(args: Ts, input: Ts) -> Ts {
     let mut iter = parse_macro_input!(args as AttributeArgs).into_iter();
 
     let (Some(shortt), Some(longt)) = (iter.next(), iter.next()) else {
@@ -94,21 +106,39 @@ pub fn flag(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let flag = match ty.as_str() {
         "u64" => construct_flag!(u64, short, long, help, mandatory, nargs),
-        _ => panic!()
+        _ => todo!()
     };
 
-    let ts = if let Some(val) = unsafe { PARSER.parse(&flag) } {
-        let mut ts = vec![
-            TokenTree::Ident(Ident::new("const", Span::call_site())),
-            TokenTree::Ident(Ident::new(&name, Span::call_site())),
-            TokenTree::Punct(Punct::new(':', Spacing::Alone)),
-            TokenTree::Ident(Ident::new(&ty, Span::call_site())),
-            TokenTree::Punct(Punct::new('=', Spacing::Alone)),
-            TokenTree::Literal(Literal::usize_unsuffixed(val as usize)),
-            TokenTree::Punct(Punct::new(';', Spacing::Joint)),
-        ];
+    let mut ts = vec![
+        Tt::Ident(Ident::new("const", Span::call_site())),
+        Tt::Ident(Ident::new(&name, Span::call_site())),
+        Tt::Punct(Punct::new(':', Spacing::Alone)),
+        Tt::Ident(Ident::new(&ty, Span::call_site())),
+        Tt::Punct(Punct::new('=', Spacing::Alone)),
+    ];
+
+    if !PathBuf::from(TMP_FLAG_FILE).exists() {
+        println!("1");
+        let def = match ty.as_str() {
+            "u64" => u64::default(),
+            _ => todo!()
+        };
+
+        ts.extend(vec![
+            Tt::Literal(Literal::usize_unsuffixed(def as _)),
+            Tt::Punct(Punct::new(';', Spacing::Joint)),
+        ]);
         ts.extend(input);
-        TokenStream::from_iter(ts)
+        return Ts::from_iter(ts)
+    }
+
+    let ts = if let Some(val) = unsafe { PARSER.parse(&flag) } {
+        ts.extend(vec![
+            Tt::Literal(Literal::usize_unsuffixed(val as _)),
+            Tt::Punct(Punct::new(';', Spacing::Joint)),
+        ]);
+        ts.extend(input);
+        Ts::from_iter(ts)
     } else { input };
 
     ts
