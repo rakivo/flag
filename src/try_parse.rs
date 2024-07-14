@@ -1,4 +1,9 @@
-use std::env;
+use std::{
+    env,
+    ops::Range,
+    str::FromStr,
+    process::exit
+};
 use crate::{
     Flag,
     Parser
@@ -34,6 +39,17 @@ impl TryParse for bool {
     }
 }
 
+fn parse<T>(x: &str) -> T
+where
+    T: FromStr,
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    x.parse::<_>().map_err(|err| {
+        eprintln!("ERROR: Failed to convert `{x}` to integer: {err}");
+        exit(1)
+    }).unwrap()
+}
+
 // General implementation for integer types.
 impl TryParse for isize {
     #[inline]
@@ -41,7 +57,26 @@ impl TryParse for isize {
         env::args().skip_while(|x| x != &flag.short && x != &flag.long)
             .skip(1)
             .next()
-            .map(|x| x.parse::<_>().expect("Failed to parse argument"))
+            .map(|x| parse(&x))
+    }
+}
+
+impl TryParse for Range::<isize> {
+    #[inline]
+    fn parse(_: &mut Parser, flag: &Flag::<Range::<isize>>) -> Self::Ret {
+        env::args().skip_while(|x| x != &flag.short && x != &flag.long)
+            .skip(1)
+            .next()
+            .map(|x| {
+                let splitted = x.split("..").collect::<Vec::<_>>();
+                if splitted.len() != 2 {
+                    eprintln!("ERROR: Failed to convert `{x}` to range, expected value like: `69..69`");
+                    exit(1)
+                }
+                let start = parse(splitted[0]);
+                let end = parse(splitted[1]);
+                start..end
+            })
     }
 }
 
@@ -51,7 +86,7 @@ macro_rules! impl_try_parse {
             impl TryParse for $t {
                 #[inline]
                 fn parse(parser: &mut Parser, flag: &Flag::<$t>) -> Self::Ret {
-                    isize::parse(parser, &Flag::<isize> {
+                    isize::parse(parser, &Flag::<_> {
                         short: flag.short,
                         long: flag.long,
                         help: flag.help,
@@ -59,6 +94,26 @@ macro_rules! impl_try_parse {
                         default: flag.default.map(|x| x as _),
                         nargs: flag.nargs.to_owned()
                     }).map(|x| x as _)
+                }
+            }
+
+            impl TryParse for Range::<$t> {
+                #[inline]
+                fn parse(parser: &mut Parser, flag: &Flag::<Range::<$t>>) -> Self::Ret {
+                    Range::<isize>::parse(parser, &Flag::<_> {
+                        short: flag.short,
+                        long: flag.long,
+                        help: flag.help,
+                        mandatory: flag.mandatory,
+                        default: flag.default.as_ref().map(|x| Range {
+                            start: x.start as _,
+                            end: x.end as _,
+                        }),
+                        nargs: flag.nargs.to_owned()
+                    }).map(|x| Range {
+                        start: x.start as _,
+                        end: x.end as _,
+                    })
                 }
             }
         ) *

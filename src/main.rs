@@ -1,4 +1,8 @@
 #![feature(associated_type_defaults)]
+use std::{
+    ops::Range,
+};
+
 mod try_parse;
 use try_parse::*;
 
@@ -116,8 +120,8 @@ impl Parser {
 
 fn main() {
     let flag1 = Flag::<i32>::new("-f", "--flag").mandatory().help("test").default(34);
-    let flag2 = Flag::<String>::new("-r", "--range");
-    let flag3 = Flag::<u64>::new("-m", "--mom").mandatory();
+    let flag2 = Flag::<Range::<usize>>::new("-r", "--range");
+    let flag3 = Flag::<String>::new("-m", "--mom").mandatory();
 
     let mut parser = Parser::new();
 
