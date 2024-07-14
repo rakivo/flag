@@ -1,7 +1,7 @@
 use std::{
-    env,
     ops::Range,
     str::FromStr,
+    path::PathBuf,
     process::exit
 };
 use crate::{
@@ -27,15 +27,22 @@ impl TryParse for () {
 
 impl TryParse for String {
     #[inline(always)]
-    fn parse(_: &mut Parser, flag: &Flag::<String>) -> Self::Ret {
-        env::args().skip_while(|x| x != &flag.short && x != &flag.long).skip(1).next()
+    fn parse(parser: &mut Parser, flag: &Flag::<String>) -> Self::Ret {
+        parser.splitted.iter().skip_while(|x| x != &flag.short && x != &flag.long).skip(1).next().cloned()
+    }
+}
+
+impl TryParse for PathBuf {
+    #[inline(always)]
+    fn parse(parser: &mut Parser, flag: &Flag::<PathBuf>) -> Self::Ret {
+        parser.splitted.iter().skip_while(|x| x != &flag.short && x != &flag.long).skip(1).next().map(PathBuf::from)
     }
 }
 
 impl TryParse for bool {
     #[inline(always)]
-    fn parse(_: &mut Parser, flag: &Flag::<bool>) -> Self::Ret {
-        Some(env::args().any(|x| x == flag.short || x == flag.long))
+    fn parse(parser: &mut Parser, flag: &Flag::<bool>) -> Self::Ret {
+        Some(parser.splitted.iter().any(|x| x == flag.short || x == flag.long))
     }
 }
 
@@ -53,8 +60,8 @@ where
 // General implementation for integer types.
 impl TryParse for isize {
     #[inline]
-    fn parse(_: &mut Parser, flag: &Flag::<isize>) -> Self::Ret {
-        env::args().skip_while(|x| x != &flag.short && x != &flag.long)
+    fn parse(parser: &mut Parser, flag: &Flag::<isize>) -> Self::Ret {
+        parser.splitted.iter().skip_while(|x| x != &flag.short && x != &flag.long)
             .skip(1)
             .next()
             .map(|x| parse(&x))
@@ -63,8 +70,8 @@ impl TryParse for isize {
 
 impl TryParse for Range::<isize> {
     #[inline]
-    fn parse(_: &mut Parser, flag: &Flag::<Range::<isize>>) -> Self::Ret {
-        env::args().skip_while(|x| x != &flag.short && x != &flag.long)
+    fn parse(parser: &mut Parser, flag: &Flag::<Range::<isize>>) -> Self::Ret {
+        parser.splitted.iter().skip_while(|x| x != &flag.short && x != &flag.long)
             .skip(1)
             .next()
             .map(|x| {

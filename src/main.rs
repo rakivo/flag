@@ -1,6 +1,8 @@
 #![feature(associated_type_defaults)]
 use std::{
+    env,
     ops::Range,
+    path::PathBuf
 };
 
 mod try_parse;
@@ -45,11 +47,6 @@ where
     }
 
     #[inline(always)]
-    pub fn parse(&mut self) -> Option::<T> {
-        T::parse(&mut Parser::new(), self)
-    }
-
-    #[inline(always)]
     pub fn help(mut self, help: &'static str) -> Self {
         self.help = Some(help); self
     }
@@ -90,12 +87,18 @@ mod parser {
 }
 
 pub struct Parser {
+    #[allow(unused)]
+    string: String,
+    splitted: Vec::<String>,
 }
 
 impl Parser {
     #[inline]
     pub fn new() -> Self {
+        let splitted = env::args().collect::<Vec::<_>>();
         Self {
+            string: splitted.join(" "),
+            splitted
         }
     }
 
@@ -122,10 +125,12 @@ fn main() {
     let flag1 = Flag::<i32>::new("-f", "--flag").mandatory().help("test").default(34);
     let flag2 = Flag::<Range::<usize>>::new("-r", "--range");
     let flag3 = Flag::<String>::new("-m", "--mom").mandatory();
+    let flag4 = Flag::<PathBuf>::new("-d", "--dir").mandatory();
 
     let mut parser = Parser::new();
 
     println!("{:?}", parser.parse(&flag1));
     println!("{:?}", parser.parse(&flag2));
     println!("{:?}", parser.parse_or_default(&flag3));
+    println!("{:?}", parser.parse(&flag4));
 }
