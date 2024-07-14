@@ -1,8 +1,6 @@
-use crate::{
-    Flag,
-    FLAGS,
-    Parser,
-};
+use crate::Flag;
+use crate::FLAGS;
+use crate::Parser;
 
 pub trait TryParse
 where

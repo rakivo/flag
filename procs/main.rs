@@ -29,14 +29,11 @@ use syn::{
     NestedMeta as NM,
     parse_macro_input,
 };
-use std::{
-    path::PathBuf,
-    fs::read_to_string,
-};
+use std::env;
 
-const TMP_FLAG_FILE: &str = "tmp.flag";
+const FLAGS_VAR: &str = "FLAGS";
 
-static FLAGS: LazyLock::<String> = LazyLock::new(|| read_to_string("tmp.flag").expect("You forgot to call init()"));
+static FLAGS: LazyLock::<String> = LazyLock::new(|| env::var(FLAGS_VAR).expect(&format!("Set flags to {FLAGS_VAR} env. variable")));
 static mut PARSER: Parser = Parser::new();
 
 macro_rules! construct_flag {
@@ -106,37 +103,19 @@ pub fn flag(args: Ts, input: Ts) -> Ts {
 
     let flag = match ty.as_str() {
         "u64" => construct_flag!(u64, short, long, help, mandatory, nargs),
-        _ => todo!()
+        _ => panic!()
     };
 
-    let mut ts = vec![
-        Tt::Ident(Ident::new("const", Span::call_site())),
-        Tt::Ident(Ident::new(&name, Span::call_site())),
-        Tt::Punct(Punct::new(':', Spacing::Alone)),
-        Tt::Ident(Ident::new(&ty, Span::call_site())),
-        Tt::Punct(Punct::new('=', Spacing::Alone)),
-    ];
-
-    if !PathBuf::from(TMP_FLAG_FILE).exists() {
-        println!("1");
-        let def = match ty.as_str() {
-            "u64" => u64::default(),
-            _ => todo!()
-        };
-
-        ts.extend(vec![
-            Tt::Literal(Literal::usize_unsuffixed(def as _)),
-            Tt::Punct(Punct::new(';', Spacing::Joint)),
-        ]);
-        ts.extend(input);
-        return Ts::from_iter(ts)
-    }
-
     let ts = if let Some(val) = unsafe { PARSER.parse(&flag) } {
-        ts.extend(vec![
-            Tt::Literal(Literal::usize_unsuffixed(val as _)),
+        let mut ts = vec![
+            Tt::Ident(Ident::new("const", Span::call_site())),
+            Tt::Ident(Ident::new(&name, Span::call_site())),
+            Tt::Punct(Punct::new(':', Spacing::Alone)),
+            Tt::Ident(Ident::new(&ty, Span::call_site())),
+            Tt::Punct(Punct::new('=', Spacing::Alone)),
+            Tt::Literal(Literal::usize_unsuffixed(val as usize)),
             Tt::Punct(Punct::new(';', Spacing::Joint)),
-        ]);
+        ];
         ts.extend(input);
         Ts::from_iter(ts)
     } else { input };
