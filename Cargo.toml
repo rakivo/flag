@@ -1,6 +1,15 @@
 [package]
 name = "flag"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+authors = ["Mark Tyrkba <marktyrkba456@gmail.com>"]
+categories = ["command-line-interface", "parsing", "utilities", "development-tools"]
+description = "Ultra lightweight library to parse flags"
+keywords = ["flags", "flag", "lightweight", "library"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rakivo/flag"
+rust-version = "1.56.0"
 
-[dependencies]
+[lib]
+path = "src/lib.rs"
+crate-type = ["rlib"]
