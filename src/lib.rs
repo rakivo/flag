@@ -116,6 +116,16 @@ pub struct Flag<T = ()> {
     default: Option::<T>
 }
 
+#[macro_export]
+macro_rules! new_flag {
+    ($short: literal, $long: literal) => {
+        Flag::new($short, $long, None)
+    };
+    ($short: literal, $long: literal, $def: expr) => {
+        Flag::new($short, $long, Option::Some($def))
+    };
+}
+
 /// I separated moving and borrowing methods to conveniently create flags in one line, e.g.
 /// ```
 /// let flag = Flag::<i32>::new("-f", "--flag").mandatory().help("test");
@@ -125,18 +135,18 @@ impl<T> Flag<T>
 where
     T: TryParse
 {
-    pub fn new(short: &'static str, long: &'static str) -> Self {
+    pub const fn new(short: &'static str, long: &'static str, default: Option::<T>) -> Self {
         Self {
             short,
             long,
             help: None,
             mandatory: false,
-            default: None::<T>,
+            default,
         }
     }
 
     #[inline(always)]
-    pub fn help(mut self, help: &'static str) -> Self {
+    pub const fn help(mut self, help: &'static str) -> Self {
         self.help = Some(help); self
     }
 
@@ -146,7 +156,7 @@ where
     }
 
     #[inline(always)]
-    pub fn mandatory(mut self) -> Self {
+    pub const fn mandatory(mut self) -> Self {
         self.mandatory = true; self
     }
 
