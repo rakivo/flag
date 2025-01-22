@@ -123,7 +123,7 @@ impl<T> std::fmt::Display for Flag<T> {
             padding = if flags.len() < DPAD {
                 " ".repeat(DPAD - flags.len())
             } else {
-                String::new()
+                " ".to_owned()
             },
             help = self.help.unwrap_or("")
         }
