@@ -117,7 +117,16 @@ impl<T> std::fmt::Display for Flag<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         const DPAD: usize = 20;
         let flags = format!("[{s}, {l}]", s = self.short, l = self.long);
-        write!(f, "{flags} {}{}", " ".repeat(DPAD - (flags.len())), self.help.unwrap_or(""))
+        write!{
+            f,
+            "{flags}{padding}{help}",
+            padding = if flags.len() < DPAD {
+                " ".repeat(DPAD - flags.len())
+            } else {
+                String::new()
+            },
+            help = self.help.unwrap_or("")
+        }
     }
 }
 
