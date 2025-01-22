@@ -69,10 +69,7 @@
 //!
 //! #### You can easily add support for other data types by creating a PR to the official repo: <https://github.com/rakivo/flag/>
 
-use std::{
-    env,
-    process::exit
-};
+use std::{env, process::exit};
 
 mod try_parse;
 use try_parse::*;
@@ -114,6 +111,14 @@ pub struct Flag<T = ()> {
     help: Option::<&'static str>,
     mandatory: bool,
     default: Option::<T>
+}
+
+impl<T> std::fmt::Display for Flag<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        const DPAD: usize = 20;
+        let flags = format!("[{s}, {l}]", s = self.short, l = self.long);
+        write!(f, "{flags} {}{}", " ".repeat(DPAD - (flags.len())), self.description)
+    }
 }
 
 #[macro_export]
