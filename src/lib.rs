@@ -15,39 +15,28 @@
 //!
 //! ``` rust
 //! use std::{path::PathBuf, ops::Range};
-//! use flager::{Flag, Parser, NArgs};
-//!
+//! use flager::{Flag, Parser, NArgs, new_flag};
+//! 
+//! const I32_FLAG: Flag::<i32> = new_flag!("-f", "--flag")
+//!     .mandatory()
+//!     .help("A mandatory integer flag");
+//! 
+//! const MULTI_ARGS_RANGE_FLAG: Flag::<Range::<usize>> = new_flag!("-r", "--range")
+//!     .help("Multiple arguments");
+//! 
 //! fn main() {
 //!     let parser = Parser::new();
-//!
-//!     let flag = Flag::<i32>::new("-f", "--flag")
-//!         .mandatory()
-//!         .default(420)
-//!         .help("A mandatory integer flag");
-//!
-//!     println!("Flag: {value}", value = parser.parse(&flag).unwrap());
-//!
-//!     ////////////////////////////////////////
-//!
-//!     let flag2 = Flag::<PathBuf>::new("-p", "--path")
-//!         .default("default/path".into())
+//! 
+//!     let path_flag: Flag::<PathBuf> = new_flag!("-p", "--path", "default/path".into())
 //!         .help("An optional path flag");
-//!
-//!     println!("Path: {path:?}", path = parser.parse_or_default(&flag2));
-//!
-//!     ////////////////////////////////////////
-//!
-//!     let flag3 = Flag::<String>::new("-a", "--args")
+//! 
+//!     let multi_args_flag: Flag::<String> = new_flag!("-a", "--args")
 //!         .help("Multiple arguments");
-//!
-//!     println!("Arguments: {args:?}", args = parser.parse_many(&flag3, NArgs::SmartRemainder));
-//!
-//!     ////////////////////////////////////////
-//!
-//!     let flag4 = Flag::<Range::<usize>>::new("-r", "--range")
-//!         .help("Multiple arguments");
-//!
-//!     println!("Ranges: {ranges:?}", ranges = parser.parse_many(&flag4, NArgs::SmartRemainder));
+//! 
+//!     println!("Flag: {value}", value = parser.parse(&I32_FLAG).unwrap());
+//!     println!("Path: {path:?}", path = parser.parse_or_default(&path_flag));
+//!     println!("Arguments: {args:?}", args = parser.parse_many(&multi_args_flag, NArgs::Remainder));
+//!     println!("Ranges: {ranges:?}", ranges = parser.parse_many(&MULTI_ARGS_RANGE_FLAG, NArgs::SmartRemainder));
 //! }
 //! ```
 //! ### In this example, we define three flags:
@@ -98,7 +87,7 @@ use try_parse::*;
 /// ```
 /// ### Output will be following: `[420, 69, 1024]`.
 ///
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum NArgs {
     Remainder,
     Count(usize),
@@ -252,6 +241,8 @@ impl Parser {
     /// Checks if specific flag is provided
     #[inline]
     pub fn passed<T>(&self, f: &Flag::<T>) -> bool {
-        self.splitted.iter().any(|x| x == f.short || x == f.long)
+        self.splitted.iter().any(|x| {
+            x == f.short || x == f.long || x.starts_with(f.short) || x.starts_with(f.long)
+        })
     }
 }

@@ -20,21 +20,63 @@ where
 
 #[inline]
 fn parse<T>(parser: &Parser, flag: &Flag::<T>) -> Option::<String> {
-    parser.splitted.iter().skip_while(|x| x != &flag.short && x != &flag.long).skip(1).next().cloned()
+    parser.splitted.iter().enumerate().find_map(|(i, x)| {
+        if x == &flag.short || x == &flag.long {
+            // Case 1: Space-separated value (e.g., `-j 5`)
+            parser.splitted.get(i + 1).map(|v| v.clone())
+        } else if let Some(value) = x.strip_prefix(flag.short).or_else(|| x.strip_prefix(flag.long)) {
+            // Case 2: Concatenated value (e.g., `-j5` or `--jobs=5`)
+            Some(value.trim_start_matches('=').to_string())
+        } else {
+            None
+        }
+    })
 }
 
-fn parse_many<T>(parser: &Parser, flag: &Flag::<T>, nargs: NArgs) -> Option::<Vec::<String>> {
-    let mut iter = parser.splitted.iter().cloned().skip_while(|x| x != &flag.short && x != &flag.long).skip(1);
-    if let Some(v) = iter.next() {
-        let mut ret = vec![v];
-        match nargs {
-            NArgs::Count(count)   => ret.extend(iter.take(count - 1)),
-            NArgs::Remainder      => ret.extend(iter),
-            NArgs::SmartRemainder => ret.extend(iter.take_while(|x| !x.starts_with("-")))
+#[inline]
+fn parse_many<T>(parser: &Parser, flag: &Flag::<T>, nargs: NArgs) -> Option<Vec::<String>> {
+    let mut iter = parser.splitted.iter().enumerate().peekable();
+    let mut ret = Vec::with_capacity(iter.len());
+
+    while let Some((i, x)) = iter.next() {
+        if x == &flag.short || x == &flag.long {
+            // Case 1: Space-separated values (e.g., `-j 5 6 7`)
+            for _ in 0..match nargs {
+                NArgs::Count(count) => count,
+                NArgs::Remainder | NArgs::SmartRemainder => usize::MAX,
+            } {
+                if let Some(v) = parser.splitted.get(i + 1 + ret.len()) {
+                    if *v == flag.short || *v == flag.long {
+                        break // Stop if we encounter the same flag again
+                    }
+                    if nargs == NArgs::SmartRemainder && v.starts_with('-') {
+                        break // Stop if we encounter another flag
+                    }
+                    ret.push(v.clone())
+                } else {
+                    break
+                }
+            }
+        } else if let Some(value) = x.strip_prefix(flag.short).or_else(|| x.strip_prefix(flag.long)) {
+            // Case 2: Concatenated value (e.g., `-j5` or `--jobs=5`)
+            ret.push(value.trim_start_matches('=').to_string());
+
+            // Handle additional arguments for `NArgs::Remainder` or `NArgs::SmartRemainder`
+            if nargs == NArgs::Remainder || nargs == NArgs::SmartRemainder {
+                while let Some((.., v)) = iter.next() {
+                    if nargs == NArgs::SmartRemainder && v.starts_with('-') {
+                        break // Stop if we encounter another flag
+                    }
+                    ret.push(v.clone())
+                }
+            }
         }
-        Some(ret)
-    } else {
+    }
+
+    if ret.is_empty() {
         None
+    } else {
+        Some(ret)
     }
 }
 
