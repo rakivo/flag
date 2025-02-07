@@ -122,10 +122,10 @@ impl<T> std::fmt::Display for Flag<T> {
 #[macro_export]
 macro_rules! new_flag {
     ($short: literal, $long: literal) => {
-        Flag::new($short, $long, None)
+        $crate::Flag::new($short, $long, None)
     };
     ($short: literal, $long: literal, $def: expr) => {
-        Flag::new($short, $long, Option::Some($def))
+        $crate::Flag::new($short, $long, Option::Some($def))
     };
 }
 
